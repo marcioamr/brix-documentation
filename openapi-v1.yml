@@ -1,0 +1,202 @@
+openapi: '3.0.2'
+info:
+  title: API Brix
+  version: '1.0'
+  contact: 
+    name: Suporte Brix
+    email: marcioamr@gmail.com
+    url: https://www.brix.dev.br
+  description: |
+    Faça a gestão completa de sua carteira de cobrança bancária por meio da emissão e gestão de cobranças bancárias e cobranças por Pix.
+    
+    Integre facilmente seu e-commerce ou solução de POS de forma super simples e eficiente utilizando a nossa API Brix.
+
+    ## Introdução
+
+    Crie a sua conta conosco agora mesmo e comece a receber imediatamente por Pix na sua conta de preferência, onde a sua empresa possui alguma chave cadastrada.
+
+    No momento a nossa biblioteca está integrada ao [Banco do Brasil](https://www.bb.com.br). Outra instituições estão sendo incorporadas gradativamente à Plataforma.
+
+    ### Pix
+    Pix é novo sistema de pagamentos instantâneos brasileiros criado em 2020 que permite, por meio de um QR Code padronizado ou código/texto chamado de Copia e Cola receber imediatamente e 24 hrs por dia de seus clientes a um baixíssimo custo.
+
+    ### Boleto Bancário (em breve)
+    É uma forma padronizada pelo Sistema Financeiro Brasilieiro para permitir as empresas a arrecadação/recebimento de títulos por meio de um código de barras padronizada e amplamente utilizado.
+
+    ## Primeiros Passos
+    O primeiro passo necessário para utilizar o componente do Brix é criar uma conta na platatorma, que ainda está em construção. Neste momento é necessário solicitar a criação destas credenciais por meio do e-mail marcioamr@gmail.com.
+    Com a conta criada vocë receberá um token para permitir consumir as API por meio do método de autenticação do `API Key`. 
+
+    A segunda etapa é cadastrar uma chave na Plataforma. A chave a ser criada necessariamente tem que existir na instituição onde deseja receber. Neste momento será necessário informar as suas credenciais de acesso à API no PSP onde possui a chave.
+
+    ## Tratamento de Erros
+    O Brix utiliza a arquitetura RESTful que se baseia no protocolo HTTP e o retorno de toda transação possui um código com semântica que permite definir se a transação foi realizada com sucesso ou não.
+
+    As respostas de erro incluem no corpo detalhes do erro seguindo o schema da RFC [Problem Details for HTTP APIs](https://tools.ietf.org/html/rfc7807).
+
+    Abaixo os erros gerados pela solução:
+
+    - `Forbidden`  - Requisição de participante autenticado que viola alguma regra de autorização.     Ver [rfc7231](https://tools.ietf.org/html/rfc7231#section-6.5.3).
+    - `BadRequest`  -  Requisição com formato inválido.    Ver [rfc7231](https://tools.ietf.org/html/rfc7231#section-6.5.1)
+    - `NotFound`  - Entidade não encontrada.     Ver [rfc7231](https://tools.ietf.org/html/rfc7231#section-6.5.4)
+    - `RateLimited`  - Limite de requisições foi atingido.     Ver seção sobre [limitação de requisições](#section/Seguranca/Limitacao-de-requisicoes)
+    - `InternalServerError`  - Condição inesperada ao processar requisição.    Ver [rfc7231](https://tools.ietf.org/html/rfc7231#section-6.6.1)
+    - `ServiceUnavailable`  - Serviço não está disponível no momento. Serviço solicitado pode estar em manutenção ou fora    da janela de funcionamento.
+x-tagGroups: 
+  - name: Recursos disponíveis
+    tags: 
+      - cobranca
+      - webhook
+servers:
+  - url: 'https://api.server.test/v1'
+    description: Servidor de API do Brix de produção
+tags:    
+  - name: cobranca
+    x-displayName: Cobrança
+    description: Recurso utilizado para o cadastro e manutenção de cobranças, que podem ser do tipo boleto, Pix ou misto.
+  - name: webhook
+    x-displayName: "Webhook"
+    description: Recurso que permite que eventos, a exemplo da criação ou pagamento de um Pix, sejam enviados para uma URL previamente cadastrada.
+  - name: usuario
+    x-displayName: usuário
+    description: Recurso utilizado para a gestão de usuários.
+components:
+  securitySchemes:
+    Autenticação Básica:
+      type: http
+      scheme: basic
+      in: header
+      description: 
+        Esquema básico de autenticação onde se invoca um endpoint com o `header` `Authorization` com as credenciais separados por ":" (`username:password`) em formato Base64. <br><br>
+        Opção utilizada para a criação de token JWT a ser utilizada para consumir as API disponibilizadas por meio do método `Bearer Authentication`.
+    Autenticação Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      in: header
+      description: |
+        Esquema de autenticação baseado em HTTP, também chamado Bearer Token, onde a cada requisição é passado o token no header `Authorization` a palavra `Bearer ` mais o token.
+        O token é adquirido após a autenticação (login) utilizando o método `Basic Authentication`.
+    API Key:
+      type: API Key
+      name: api-key
+      in: header
+      description: |
+        Esquema de autenticação baseado em HTTP onde a cada requisição é passado o token no header `Api-Key`.
+        O token é único e gerado no momento da criação do login do usuário.
+paths:
+  /webhook/{id}:
+    get:
+      description: Consulta um webhook específico.
+      tags: 
+        - webhook
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        '200':
+          description: Webhook encontrado com sucesso.
+        '404':
+          description: Webhook não encontrado.
+    put:
+      description: Editar um webhook.
+      tags: 
+        - webhook
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        '200':
+          description: Webhook editado com sucesso.
+    delete:
+      description: Exclui um webhook.
+      tags: 
+        - webhook
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        '200':
+          description: Webhook excluído com sucesso.
+  /webhook:
+    post:
+      description: Cadastra um webhook.
+      tags: 
+        - webhook
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        '200':
+          description: Webhook cadastrado com sucesso.
+
+    get:
+      description: Lista os webhooks cadastrados.
+      tags: 
+        - webhook
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        '200':
+          description: Lista de webhooks cadastrados para a conta.
+  /cobranca/{id}:
+    get:
+      description: Consulta uma cobrança específica.
+      tags: 
+        - cobranca
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        '200':
+          description: Cobrança encontrada com sucesso.
+        '404':
+          description: Cobrança não encontrada.
+    put:
+      description: Editar uma cobrança.
+      tags: 
+        - cobranca
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        '200':
+          description: Cobrança editada com sucesso.
+    delete:
+      description: Exclui uma cobrança.
+      tags: 
+        - cobranca
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        '200':
+          description: Cobrança excluída com sucesso.
+  /cobranca:
+    post:
+      description: Cadastra uma cobrança.
+      tags: 
+        - cobranca
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        '200':
+          description: Cobrança cadastrada com sucesso.
+    get:
+      description: Lista as cobranças cadastrados.
+      tags: 
+        - cobranca
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        '200':
+          description: Lista as cobranças cadastradas para a conta.
+security:
+  - Autenticação Básica: []
+  - Autenticação Bearer: []
+  - API Key: []
+
+  
