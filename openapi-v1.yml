@@ -19,6 +19,8 @@ info:
 
     ### Pix
     Pix é novo sistema de pagamentos instantâneos brasileiros criado em 2020 que permite, por meio de um QR Code padronizado ou código/texto chamado de Copia e Cola receber imediatamente e 24 hrs por dia de seus clientes a um baixíssimo custo.
+    #### Chave Pix
+    Chave Pix é o identificador do cliente no arranjo do Pix. É por meio dele que a instituição pagadora saberá para qual instituição ele deverá enviar o dinheiro. Pode ser um CPF, CNPJ, e-mail ou um número aleatório gerado no momento da sua criação. A chave Pix deve ser criada junto à instituição onde espera receber o dinheiro.
 
     ### Boleto Bancário (em breve)
     É uma forma padronizada pelo Sistema Financeiro Brasilieiro para permitir as empresas a arrecadação/recebimento de títulos por meio de um código de barras padronizada e amplamente utilizado.
@@ -84,6 +86,76 @@ components:
       description: |
         Esquema de autenticação baseado em HTTP onde a cada requisição é passado o token no header `Api-Key`.
         O token é único e gerado no momento da criação do login do usuário.
+  schemas:
+    Cobranca:
+      type: object
+      properties:
+        tipoCobranca:
+          type: string
+          description: Tipo de cobrança. Aceita os valores PIX, BOLETO e BOLETO_PIX. Apenas a opção PIX está disponível.
+          example: PIX
+        chavePix:
+          type: string
+          description: Chave Pix do recebedor. Define para qual chave Pix o pagamento deve ser direcionado.
+            Pode ser e-mail, CPF, CPNJ, telefone celular e um identificador único. A chave deve existir associado às credenciais informadas para a integração.
+          example: Pizaria
+          minLength: 10
+          maxLength: 150
+        valor:
+          type: number
+          format: double
+          description: Valor financeiro da cobrança.
+          example: 102.23
+          minimum: 0.01
+        dataVencimento:
+          type: string
+          description: Data de vencimento da cobrança.
+          format: date-time
+          example: '2020-10-19T16:46:45Z'
+        dataPagamento:
+          type: string
+          format: date-time
+          description: Data de confirmação do pagamento pela instituição financeira do pagador.
+          example: '2020-10-19T16:46:45Z'
+          nullable: true
+        dataCancelamento:
+          type: string
+          format: date-time
+          description: Data de cancelamento da cobrança.
+          example: '2020-10-19T16:46:45Z'
+          nullable: true
+        beneficiarioNome:
+          type: string
+          description: Nome do beneficiário.
+          example: 'Fulano de Tal'
+          minLength: 5
+          maxLength: 150
+          nullable: true
+        beneficiarioCpfCnpj:
+          type: string
+          description: CPF ou CNPJ válido da pessoa física ou jurídica.
+          example: 12312312312
+          minLength: 11
+          maxLength: 14
+          nullable: true
+        descricaoCobranca:
+          type: string
+          description: Campo observação a ser exibido para o usuário pagador.
+          example: Pizaria
+          minLength: 3
+          maxLength: 100
+          nullable: true
+        txidPix:
+          type: string
+          description: Identificador único da transação. Não pode ser repetir para a mesma chave. Necessariamente deve possuir 26 posições alfanumérica. Se não informado o sistema irá gerar um identificador aleatório.
+          example: bNci7Rdi6BSrLLRkh7dmQt7Nkd
+          minLength: 26
+          maxLength: 26
+          nullable: true
+      required:
+        - tipoCobranca
+        - valor
+        - chavePix
 paths:
   /webhook/{id}:
     get:
@@ -175,9 +247,14 @@ paths:
           description: Cobrança excluída com sucesso.
   /cobranca:
     post:
-      description: Cadastra uma cobrança.
+      description: Cadastra uma cobrança. É por meio dela que você pode receber via Pix ou boleto bancário.
       tags: 
         - cobranca
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cobranca'
       security:
         - API Key: []
         - Autenticação Bearer: []
