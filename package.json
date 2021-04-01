@@ -1,0 +1,10 @@
+{
+  "name": "brix-documentation",
+  "version": "1.0.0-rc",
+  "private": true,
+  "scripts": {
+    "start": "redoc-cli bundle openapi-v1.yml && mv redoc-static.html index.html",
+    "dev": "redoc-cli bundle openapi-v1.yml && mv redoc-static.html index.htm",
+    "prod": "redoc-cli bundle openapi-v1.yml && mv redoc-static.html index.htm"
+  }
+}
