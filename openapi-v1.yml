@@ -86,6 +86,55 @@ components:
       description: |
         Esquema de autenticação baseado em HTTP onde a cada requisição é passado o token no header `Api-Key`.
         O token é único e gerado no momento da criação do login do usuário.
+  responses:
+    Forbidden:
+      description: Do not have appropriate permissions
+      content:
+        application/json": 
+          schema: 
+              "$ref": "#/components/schemas/Error"
+    Unauthorized:
+      description: No access token provided
+      content:
+        application/json": 
+          schema: 
+              "$ref": "#/components/schemas/Error"
+    BadRequest:
+      description: Invalid or missing parameters in URL or request body
+      content:
+        application/json": 
+          schema: 
+              "$ref": "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json": 
+          schema: 
+              "$ref": "#/components/schemas/Error"
+    TooLarge:
+      description: Content too large
+      content:
+        application/json": 
+          schema: 
+              "$ref": "#/components/schemas/Error"
+    NotImplemented:
+      description: Feature is disabled
+      content:
+        application/json": 
+          schema: 
+              "$ref": "#/components/schemas/Error"
+    TooManyRequests:
+      description: Too many requests
+      content:
+        application/json": 
+          schema: 
+              "$ref": "#/components/schemas/Error"
+    InternalServerError:
+      description: Something went wrong with the server
+      content:
+        application/json": 
+          schema: 
+              "$ref": "#/components/schemas/Error"
   schemas:
     Cobranca:
       type: object
@@ -156,6 +205,37 @@ components:
         - tipoCobranca
         - valor
         - chavePix
+    Error: 
+        type: object
+        properties: 
+          status_code: 
+            type: integer
+            description: HTTP status code
+          request_id:
+            type: string
+            description: Correlation ID
+            nullable: true
+          description: 
+            type: string
+            description: Message error
+          detail:
+            type: object
+            description: Complementary object
+    ReturnCobranca: 
+        type: object
+        properties: 
+          status_code: 
+            type: integer
+            description: HTTP status code
+          request_id:
+            type: string
+            description: Correlation ID
+            nullable: true
+          json: 
+            type: object
+            description: Cobranca object
+            oneOf:
+                  - $ref: '#/components/schemas/Cobranca'
 paths:
   /webhook/{id}:
     get:
@@ -247,6 +327,7 @@ paths:
           description: Cobrança excluída com sucesso.
   /cobranca:
     post:
+      summary: Cadastra uma cobrança.
       description: Cadastra uma cobrança. É por meio dela que você pode receber via Pix ou boleto bancário.
       tags: 
         - cobranca
@@ -259,8 +340,20 @@ paths:
         - API Key: []
         - Autenticação Bearer: []
       responses:
-        '200':
+        200:
           description: Cobrança cadastrada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnCobranca"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        500:
+          $ref: "#/components/responses/InternalServerError"
     get:
       description: Lista as cobranças cadastrados.
       tags: 
