@@ -139,15 +139,21 @@ components:
     Cobranca:
       type: object
       properties:
+        idCobranca:
+          type: string
+          description: Identificador único da cobrança. Obrigatório apenas quando estiver consultando ou alterando.
         tipoCobranca:
           type: string
           description: Tipo de cobrança. Aceita os valores PIX, BOLETO e BOLETO_PIX. Apenas a opção PIX está disponível.
           example: PIX
         chavePix:
           type: string
-          description: Chave Pix do recebedor. Define para qual chave Pix o pagamento deve ser direcionado.
-            Pode ser e-mail, CPF, CPNJ, telefone celular e um identificador único. A chave deve existir associado às credenciais informadas para a integração.
-          example: Pizaria
+          description: |
+            Chave Pix do recebedor. Define para qual chave Pix o pagamento deve ser direcionado.
+            Pode ser e-mail, CPF, CPNJ, telefone celular e um identificador único. A chave deve existir 
+            associado às credenciais informadas para a integração. 
+            #### Campo obrigatório quando o `tipoCobranca` informado é do tipo PIX ou BOLETO_PIX.
+          example: email@domain.com
           minLength: 10
           maxLength: 150
         valor:
@@ -204,7 +210,16 @@ components:
       required:
         - tipoCobranca
         - valor
-        - chavePix
+    Webhook:
+      type: object
+      properties:
+        idWebhook:
+          type: string
+          description: Identificador único do webhook. Obrigatório apenas quando estiver consultando ou alterando
+        url:
+          type: string
+          description: Endereço (URL) do webhook a ser chamado pelo sistema
+          example: http://www.meudominio.com.br/webhook
     Error: 
         type: object
         properties: 
@@ -236,98 +251,80 @@ components:
             description: Cobranca object
             oneOf:
                   - $ref: '#/components/schemas/Cobranca'
-paths:
-  /webhook/{id}:
-    get:
-      description: Consulta um webhook específico.
-      tags: 
-        - webhook
-      security:
-        - API Key: []
-        - Autenticação Bearer: []
-      responses:
-        '200':
-          description: Webhook encontrado com sucesso.
-        '404':
-          description: Webhook não encontrado.
-    put:
-      description: Editar um webhook.
-      tags: 
-        - webhook
-      security:
-        - API Key: []
-        - Autenticação Bearer: []
-      responses:
-        '200':
-          description: Webhook editado com sucesso.
-    delete:
-      description: Exclui um webhook.
-      tags: 
-        - webhook
-      security:
-        - API Key: []
-        - Autenticação Bearer: []
-      responses:
-        '200':
-          description: Webhook excluído com sucesso.
-  /webhook:
-    post:
-      description: Cadastra um webhook.
-      tags: 
-        - webhook
-      security:
-        - API Key: []
-        - Autenticação Bearer: []
-      responses:
-        '200':
-          description: Webhook cadastrado com sucesso.
+    ReturnWebhook: 
+        type: object
+        properties: 
+          status_code: 
+            type: integer
+            description: HTTP status code
+          request_id:
+            type: string
+            description: Correlation ID
+            nullable: true
+          json: 
+            type: object
+            description: Webhook object
+            oneOf:
+                  - $ref: '#/components/schemas/Webhook'
 
+paths:
+  
+  /cobranca/{idCobranca}:
     get:
-      description: Lista os webhooks cadastrados.
-      tags: 
-        - webhook
-      security:
-        - API Key: []
-        - Autenticação Bearer: []
-      responses:
-        '200':
-          description: Lista de webhooks cadastrados para a conta.
-  /cobranca/{id}:
-    get:
-      description: Consulta uma cobrança específica.
+      description: Consulta uma cobrança
       tags: 
         - cobranca
       security:
         - API Key: []
         - Autenticação Bearer: []
+      parameters:
+        - in: path
+          name: idCobranca
+          schema:
+            type: string
+          required: true
+          description: Identificação única da cobrança.
       responses:
-        '200':
+        200:
           description: Cobrança encontrada com sucesso.
-        '404':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnCobranca"
+        404:
           description: Cobrança não encontrada.
-    put:
-      description: Editar uma cobrança.
-      tags: 
-        - cobranca
-      security:
-        - API Key: []
-        - Autenticação Bearer: []
-      responses:
-        '200':
-          description: Cobrança editada com sucesso.
+          $ref: "#/components/responses/NotFound"
+        501:
+          $ref: "#/components/responses/NotImplemented"
     delete:
-      description: Exclui uma cobrança.
+      description: Exclui uma cobrança
       tags: 
         - cobranca
       security:
         - API Key: []
         - Autenticação Bearer: []
+      parameters:
+        - in: path
+          name: idCobranca
+          schema:
+            type: string
+          required: true
+          description: Identificação única da cobrança.
       responses:
-        '200':
+        200:
           description: Cobrança excluída com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnCobranca"
+        404:
+          descricao: Cobrança não encontrada.
+          $ref: "#/components/responses/NotFound"
+        501:
+          $ref: "#/components/responses/NotImplemented"
   /cobranca:
     post:
-      summary: Cadastra uma cobrança.
+      summary: Cadastra uma cobrança
       description: Cadastra uma cobrança. É por meio dela que você pode receber via Pix ou boleto bancário.
       tags: 
         - cobranca
@@ -355,15 +352,181 @@ paths:
         500:
           $ref: "#/components/responses/InternalServerError"
     get:
-      description: Lista as cobranças cadastrados.
+      description: Consulta cobranças
       tags: 
         - cobranca
       security:
         - API Key: []
         - Autenticação Bearer: []
       responses:
-        '200':
+        200:
           description: Lista as cobranças cadastradas para a conta.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cobranca"
+        501:
+          $ref: "#/components/responses/NotImplemented"
+    put:
+      summary: Edita uma cobrança
+      description: Recurso que permite alterar uma cobrança.
+      tags: 
+        - cobranca
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cobranca'
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        200:
+          description: Cobrança alterada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnCobranca"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        500:
+          $ref: "#/components/responses/InternalServerError"
+
+  /webhook/{idCobranca}:
+    get:
+      description: Consulta um webhook
+      tags: 
+        - webhook
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      parameters:
+        - in: path
+          name: idWebhook
+          schema:
+            type: string
+          required: true
+          description: Identificação única do webhook
+      responses:
+        200:
+          description: Webhook encontrado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnWebhook"
+        404:
+          description: Webhook não encontrado
+          $ref: "#/components/responses/NotFound"
+        501:
+          $ref: "#/components/responses/NotImplemented"
+    delete:
+      description: Exclui um webhook
+      tags: 
+        - webhook
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      parameters:
+        - in: path
+          name: idWebhook
+          schema:
+            type: string
+          required: true
+          description: Identificação única do webhook
+      responses:
+        200:
+          description: Webhook excluída com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnWebhook"
+        404:
+          descricao: Webhook não encontrado
+          $ref: "#/components/responses/NotFound"
+        501:
+          $ref: "#/components/responses/NotImplemented"
+  /webhook:
+    post:
+      summary: Cadastra um webhook
+      description: Cadastra um webhook. Um webhook é uma url a ser chamada a cada evento de alteração nas entidades do projeto
+      tags: 
+        - webhook
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhook'
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        200:
+          description: Webhook cadastrado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnWebhook"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        500:
+          $ref: "#/components/responses/InternalServerError"
+    get:
+      description: Consulta webhooks
+      tags: 
+        - webhook
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        200:
+          description: Lista os webhook cadastrados para a  conta
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Webhook"
+        501:
+          $ref: "#/components/responses/NotImplemented"
+    put:
+      summary: Edita um webhook
+      description: Recurso que permite alterar um webhook
+      tags: 
+        - webhook
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Webhook'
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        200:
+          description: Webhook alterado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnWebhook"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        500:
+          $ref: "#/components/responses/InternalServerError"
+
 security:
   - Autenticação Básica: []
   - Autenticação Bearer: []
