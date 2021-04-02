@@ -213,7 +213,7 @@ components:
     Webhook:
       type: object
       properties:
-        idWebhook:
+        id:
           type: string
           description: Identificador único do webhook. Obrigatório apenas quando estiver consultando ou alterando
         url:
@@ -262,10 +262,11 @@ components:
             description: Correlation ID
             nullable: true
           json: 
-            type: object
+            type: array
             description: Webhook object
-            oneOf:
-                  - $ref: '#/components/schemas/Webhook'
+            items:
+              type: object
+              $ref: '#/components/schemas/Webhook'
 
 paths:
   
@@ -493,11 +494,16 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Webhook"
-        501:
-          $ref: "#/components/responses/NotImplemented"
+                type: object
+                $ref: "#/components/schemas/ReturnWebhook"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        500:
+          $ref: "#/components/responses/InternalServerError"
     put:
       summary: Edita um webhook
       description: Recurso que permite alterar um webhook
