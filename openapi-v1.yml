@@ -421,11 +421,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReturnWebhook"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
         404:
-          description: Webhook não encontrado
+          descricao: Webhook não encontrado
           $ref: "#/components/responses/NotFound"
-        501:
-          $ref: "#/components/responses/NotImplemented"
+        500:
+          $ref: "#/components/responses/InternalServerError"
     delete:
       description: Exclui um webhook
       tags: 
@@ -447,11 +453,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReturnWebhook"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
         404:
           descricao: Webhook não encontrado
           $ref: "#/components/responses/NotFound"
-        501:
-          $ref: "#/components/responses/NotImplemented"
+        500:
+          $ref: "#/components/responses/InternalServerError"
   /webhook:
     post:
       summary: Cadastra um webhook
