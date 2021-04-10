@@ -47,6 +47,7 @@ info:
 x-tagGroups: 
   - name: Recursos disponíveis
     tags: 
+      - chave
       - cobranca
       - webhook
 servers:
@@ -56,11 +57,14 @@ tags:
   - name: cobranca
     x-displayName: Cobrança
     description: Recurso utilizado para o cadastro e manutenção de cobranças, que podem ser do tipo boleto, Pix ou misto.
+  - name: chave
+    x-displayName: Chave
+    description: Recurso que permite o cadastro de chaves Pix para recebimento em tempo real. É necessário ter chave cadastrado em algum PSP/instiuição financeira e as credenciais de acesso à API.
   - name: webhook
-    x-displayName: "Webhook"
+    x-displayName: Webhook
     description: Recurso que permite que eventos, a exemplo da criação ou pagamento de um Pix, sejam enviados para uma URL previamente cadastrada.
   - name: usuario
-    x-displayName: usuário
+    x-displayName: Usuário
     description: Recurso utilizado para a gestão de usuários.
 components:
   securitySchemes:
@@ -220,16 +224,49 @@ components:
           type: string
           description: Endereço (URL) do webhook a ser chamado pelo sistema
           example: http://www.meudominio.com.br/webhook
+    Chave:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identificador único da chave. Obrigatório apenas quando estiver consultando ou alterando.
+          example: 606de81f0414250beef283ef
+        psp:
+          type: string
+          description: Identificador (ISPB) da instituição da chave. O ISPB é a primeira parte de um CNPJ sem separadores (sem o "/0001-99"). 
+          example: 60701190
+        tipo_chave:
+          type: string
+          description: Define o tipo de chave. Aceita os valores EMAIL, CPF, CNPJ e ALEATORIA.
+          example: EMAIL
+        chave:
+          type: string
+          description: Identificação da chave.
+          example: mail@dominio.com
+        dataCadastro:
+          type: string
+          description: Data de cadastramento da chave. Campo utilizado apenas na consulta. Não pode ser informado no momento do cadastramento ou alteração.
+          example: 2021-01-13T10:52:37
+        dataAlteracao:
+          type: string
+          description: Data de última alteração do cadastro. Campo utilizado apenas na consulta. Não pode ser informado no momento do cadastramento ou alteração.
+          example: 2021-01-13T10:52:37
+      required:
+        - psp
+        - tipo_chave
+        - chave
     Error: 
         type: object
         properties: 
           status_code: 
             type: integer
             description: HTTP status code
+            example: 500
           request_id:
             type: string
             description: Correlation ID
             nullable: true
+            example: 6232a3d8-a6bf-40c8-9dd5-9ed9f821d925
           description: 
             type: string
             description: Message error
@@ -242,10 +279,12 @@ components:
           status_code: 
             type: integer
             description: HTTP status code
+            example: 200
           request_id:
             type: string
             description: Correlation ID
             nullable: true
+            example: 6232a3d8-a6bf-40c8-9dd5-9ed9f821d925
           json: 
             type: object
             description: Cobranca object
@@ -257,16 +296,36 @@ components:
           status_code: 
             type: integer
             description: HTTP status code
+            example: 200
           request_id:
             type: string
             description: Correlation ID
             nullable: true
+            example: 6232a3d8-a6bf-40c8-9dd5-9ed9f821d925
           json: 
             type: array
             description: Webhook object
             items:
               type: object
               $ref: '#/components/schemas/Webhook'
+    ReturnChave: 
+        type: object
+        properties: 
+          status_code: 
+            type: integer
+            description: HTTP status code
+            example: 200
+          request_id:
+            type: string
+            description: Correlation ID
+            nullable: true
+            example: 6232a3d8-a6bf-40c8-9dd5-9ed9f821d925
+          json: 
+            type: array
+            description: Chave object
+            items:
+              type: object
+              $ref: '#/components/schemas/Chave'
 
 paths:
   
@@ -536,6 +595,154 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReturnWebhook"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        500:
+          $ref: "#/components/responses/InternalServerError"
+
+  /chave/{id}:
+    get:
+      description: Consulta uma chave
+      tags: 
+        - chave
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Identificação única da chave
+      responses:
+        200:
+          description: Chave encontrada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnChave"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          descricao: Chave não encontrada
+          $ref: "#/components/responses/NotFound"
+        500:
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      description: Exclui uma chave
+      tags: 
+        - chave
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Identificação única da chave
+      responses:
+        200:
+          description: Chave excluída com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnChave"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          descricao: Chave não encontrada
+          $ref: "#/components/responses/NotFound"
+        500:
+          $ref: "#/components/responses/InternalServerError"
+    put:
+      summary: Edita uma chave
+      description: Recurso que permite alterar uma chave
+      tags: 
+        - chave
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Chave'
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        200:
+          description: Chave alterada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnChave"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        404:
+          $ref: "#/components/responses/NotFound"
+        500:
+          $ref: "#/components/responses/InternalServerError"  
+  /chave:
+    post:
+      summary: Cadastra uma chave
+      description: Cadastra uma chave Pix.
+      tags: 
+        - chave
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Chave'
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        200:
+          description: Chave cadastrada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnChave"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        500:
+          $ref: "#/components/responses/InternalServerError"
+    get:
+      description: Consulta chaves
+      tags: 
+        - chave
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        200:
+          description: Lista as chaves cadastradas para a  conta
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/ReturnChave"
         400:
           $ref: "#/components/responses/BadRequest"
         401:
