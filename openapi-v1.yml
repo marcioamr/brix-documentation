@@ -50,6 +50,7 @@ x-tagGroups:
       - chave
       - cobranca
       - webhook
+      - psp
 servers:
   - url: 'https://api.server.test/v1'
     description: Servidor de API do Brix de produção
@@ -66,6 +67,9 @@ tags:
   - name: usuario
     x-displayName: Usuário
     description: Recurso utilizado para a gestão de usuários.
+  - name: psp
+    x-displayName: PSP
+    description: Recurso utilizado para consulta de PSP disponíveis no sistema.
 components:
   securitySchemes:
     Autenticação Básica:
@@ -255,6 +259,17 @@ components:
         - psp
         - tipo_chave
         - chave
+    Psp: 
+        type: object
+        properties: 
+          ispb: 
+            type: integer
+            description: Código ISPB do PSP
+            example: 60746948
+          nome:
+            type: string
+            description: Nome do PSP
+            example: Banco do Brasil
     Error: 
         type: object
         properties: 
@@ -326,7 +341,25 @@ components:
             items:
               type: object
               $ref: '#/components/schemas/Chave'
-
+    ReturnPsp: 
+        type: object
+        properties: 
+          status_code: 
+            type: integer
+            description: HTTP status code
+            example: 200
+          request_id:
+            type: string
+            description: Correlation ID
+            nullable: true
+            example: 6232a3d8-a6bf-40c8-9dd5-9ed9f821d925
+          json: 
+            type: array
+            description: Psp object
+            items:
+              type: object
+              $ref: '#/components/schemas/Psp'
+    
 paths:
   
   /cobranca/{idCobranca}:
@@ -743,6 +776,31 @@ paths:
               schema:
                 type: object
                 $ref: "#/components/schemas/ReturnChave"
+        400:
+          $ref: "#/components/responses/BadRequest"
+        401:
+          $ref: "#/components/responses/Unauthorized"
+        403:
+          $ref: "#/components/responses/Forbidden"
+        500:
+          $ref: "#/components/responses/InternalServerError"
+
+  /psp:
+    get:
+      description: Consulta relação de PSP disponíveis.
+      tags: 
+        - psp
+      security:
+        - API Key: []
+        - Autenticação Bearer: []
+      responses:
+        200:
+          description: Relação de PSP
+          content:
+            application/json:
+              schema:
+                type: object
+                $ref: "#/components/schemas/ReturnPsp"
         400:
           $ref: "#/components/responses/BadRequest"
         401:
