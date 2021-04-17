@@ -255,6 +255,31 @@ components:
           type: string
           description: Data de última alteração do cadastro. Campo utilizado apenas na consulta. Não pode ser informado no momento do cadastramento ou alteração.
           example: 2021-01-13T10:52:37
+        credentials:
+          type: object
+          description: Credenciais de acesso à API do PSP da chave. Informação necessária apenas se a chave for utilizada para gerar Pix.
+          nullable: true
+          properties:
+            client_id:
+              type: string
+              description: client_id obtido junto ao PSP para acesso à API.
+              example: eyJpZCI6IjN1OTciL2Jjb2RpZ29QdWJsaWNhZG9yIjowLCJjb2RpZ29Tb2Z0d2FyZSI6MTIzNjgsInNlcXVlbmNpYWxJbnN0YWxhY2FvIjoxfQ
+            client_secret:
+              type: string
+              description: client_secret obtido junto ao PSP para acesso à API.
+              example: eyJpZCI6IaRlM2Y0NWQtODAwOC00MWY0LTkiLCJjb2RpZ29QdWJsaWNhZG9yIjowLCJjb2RpZ29Tb2Z0d2FyZSI6MTIzNjgsInNlcXVlbmNpYWxJbnN0YWxhY2FvIjoxLCJzZXF1ZW5jaWFsQ3JlZGVuY2lhbCI6MSwiYW1iaWVudGUiOiJwcm9kdWNhbyIsImlhdCI6MTYxMDYxOTkxMTI5OX1
+            developer_key:
+              type: string
+              description: developer_key obtido junto ao PSP para acesso à API.
+              example: 7092108b09fabe601367e181e0050456b9e1a5bb
+            dataUltimaSincronizacao:
+              type: string
+              description: Data de última sincronização com o PSP.
+              example: 2021-01-13T10:52:37
+          required:
+            - client_id
+            - client_secret
+            - developer_key
       required:
         - psp
         - tipo_chave
