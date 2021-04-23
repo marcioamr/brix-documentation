@@ -272,7 +272,7 @@ components:
               type: string
               description: developer_key obtido junto ao PSP para acesso à API.
               example: 7092108b09fabe601367e181e0050456b9e1a5bb
-            dataUltimaSincronizacao:
+            lastSync:
               type: string
               description: Data de última sincronização com o PSP.
               example: 2021-01-13T10:52:37
