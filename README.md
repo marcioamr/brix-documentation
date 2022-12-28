@@ -1,1 +1,3 @@
 # brix-documentation
+
+.
